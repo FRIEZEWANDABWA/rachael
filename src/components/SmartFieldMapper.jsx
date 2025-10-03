@@ -16,7 +16,7 @@ const SmartFieldMapper = ({ excelData, onMappingComplete, onCancel, darkMode }) 
     { key: 'date', label: 'Training Date', required: false, icon: '📅' }
   ];
 
-  const handleAutoMap = () => {
+  const handleAutoMap = React.useCallback(() => {
     const autoMapping = {};
     
     requiredFields.forEach(field => {
@@ -56,7 +56,7 @@ const SmartFieldMapper = ({ excelData, onMappingComplete, onCancel, darkMode }) 
     });
     
     setFieldMapping(autoMapping);
-  };
+  }, [excelColumns, requiredFields]);
 
   const handleProcessData = () => {
     setIsProcessing(true);
