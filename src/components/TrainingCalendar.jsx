@@ -79,14 +79,34 @@ const TrainingCalendar = ({ employees, onAddTraining, darkMode }) => {
     return 'bg-blue-100 text-blue-800 border-blue-200'; // Upcoming
   };
 
+  const handleDeleteTraining = (trainingId, isScheduled = true) => {
+    if (window.confirm('Are you sure you want to delete this training record?')) {
+      if (isScheduled) {
+        // Remove from upcoming training
+        const existing = JSON.parse(localStorage.getItem('upcomingTraining') || '[]');
+        const updated = existing.filter(t => t.id !== trainingId);
+        localStorage.setItem('upcomingTraining', JSON.stringify(updated));
+      } else {
+        // For completed training, we'd need to remove from main employees array
+        // This would require updating the parent component
+        alert('⚠️ Cannot delete completed training records. Please use the main dashboard to manage completed training.');
+        return;
+      }
+      
+      // Refresh page to show changes
+      window.location.reload();
+    }
+  };
+
   const TrainingCard = ({ training }) => {
     const eventDate = new Date(training.scheduledDate || training.date);
     const daysUntil = Math.ceil((eventDate - new Date()) / (1000 * 60 * 60 * 24));
+    const isScheduled = training.status !== 'completed';
     
     return (
-      <div className={`p-4 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} hover:shadow-md transition-shadow`}>
+      <div className={`p-4 rounded-lg border ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} hover:shadow-md transition-shadow relative`}>
         <div className="flex justify-between items-start mb-3">
-          <div>
+          <div className="flex-1">
             <h3 className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
               {training.employeeName || training.name}
             </h3>
@@ -94,11 +114,31 @@ const TrainingCalendar = ({ employees, onAddTraining, darkMode }) => {
               {training.employeeId} • {training.trainingType || 'General Training'}
             </p>
           </div>
-          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(training.status, training.scheduledDate || training.date)}`}>
-            {training.status === 'completed' ? 'Completed' : 
-             daysUntil < 0 ? 'Overdue' : 
-             daysUntil <= 7 ? 'Due Soon' : 'Upcoming'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(training.status, training.scheduledDate || training.date)}`}>
+              {training.status === 'completed' ? 'Completed' : 
+               daysUntil < 0 ? 'Overdue' : 
+               daysUntil <= 7 ? 'Due Soon' : 'Upcoming'}
+            </span>
+            {isScheduled && (
+              <button
+                onClick={() => handleDeleteTraining(training.id, isScheduled)}
+                className="p-1 rounded-full hover:bg-red-100 text-red-600 hover:text-red-800 transition-colors"
+                title="Delete training"
+              >
+                🗑️
+              </button>
+            )}
+            {!isScheduled && (
+              <button
+                onClick={() => handleDeleteTraining(training.id, isScheduled)}
+                className="p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Cannot delete completed training"
+              >
+                🚫
+              </button>
+            )}
+          </div>
         </div>
         
         <div className="space-y-2 text-sm">
@@ -230,8 +270,29 @@ const TrainingCalendar = ({ employees, onAddTraining, darkMode }) => {
         <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           <div className="text-4xl mb-4">📅</div>
           <p>No {viewMode} training found</p>
+          {viewMode === 'upcoming' && (
+            <p className="text-sm mt-2">Schedule new training using the form above</p>
+          )}
         </div>
       )}
+
+      {/* Delete Instructions */}
+      <div className={`mt-6 p-4 rounded-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-blue-50 border border-blue-200'}`}>
+        <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          📝 Managing Training Records
+        </h3>
+        <div className="text-sm space-y-1">
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+            • <span className="font-medium text-red-600">🗑️</span> Click to delete scheduled training (upcoming/overdue)
+          </p>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+            • <span className="font-medium text-gray-500">🚫</span> Completed training cannot be deleted from here
+          </p>
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+            • Use the Dashboard's "Clear Data" button to remove all completed records
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
