@@ -47,9 +47,19 @@ function App() {
   const costCentreSummary = useMemo(() => {
     const summary = {};
     filteredEmployees.forEach(emp => {
-      summary[emp.costCentre] = (summary[emp.costCentre] || 0) + emp.daysLost;
+      const key = emp.costCentre;
+      if (!summary[key]) {
+        summary[key] = {
+          costCentre: emp.costCentre,
+          departmentName: emp.departmentName || 'Unknown Department',
+          totalDays: 0,
+          employeeCount: 0
+        };
+      }
+      summary[key].totalDays += emp.daysLost;
+      summary[key].employeeCount += 1;
     });
-    return Object.entries(summary).map(([centre, days]) => ({ centre, days }));
+    return Object.values(summary).sort((a, b) => b.totalDays - a.totalDays);
   }, [filteredEmployees]);
 
   const totalDaysLost = useMemo(() => {
@@ -71,6 +81,7 @@ function App() {
           name: employee.name,
           employeeId: employee.employeeId,
           costCentre: employee.costCentre,
+          departmentName: employee.departmentName || '',
           email: employee.email || ''
         }
       }));
@@ -94,6 +105,7 @@ function App() {
           name: emp.name,
           employeeId: emp.employeeId,
           costCentre: emp.costCentre,
+          departmentName: emp.departmentName || '',
           email: emp.email || ''
         };
       }
@@ -168,7 +180,14 @@ function App() {
               <CostCentreSummary summary={costCentreSummary} darkMode={darkMode} />
             </div>
 
-            <Charts data={costCentreSummary} darkMode={darkMode} />
+            <Charts 
+              data={costCentreSummary.map(item => ({
+                centre: item.costCentre,
+                days: item.totalDays,
+                department: item.departmentName
+              }))} 
+              darkMode={darkMode} 
+            />
           </>
         )}
       </div>

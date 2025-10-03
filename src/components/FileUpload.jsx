@@ -21,8 +21,7 @@ const FileUpload = ({ onUpload, darkMode }) => {
           
           // Find name column
           const nameKey = keys.find(k => 
-            k.toLowerCase().includes('name') || 
-            k.toLowerCase().includes('employee')
+            k.toLowerCase().includes('name') && !k.toLowerCase().includes('dept')
           ) || keys[0];
           
           // Find ID column
@@ -31,13 +30,22 @@ const FileUpload = ({ onUpload, darkMode }) => {
             k.toLowerCase().includes('emp')
           ) || keys[1];
           
+          // Find email column
+          const emailKey = keys.find(k => 
+            k.toLowerCase().includes('email') || 
+            k.toLowerCase().includes('mail')
+          );
+          
           // Find cost centre column
           const costKey = keys.find(k => 
-            k.toLowerCase().includes('cost') || 
-            k.toLowerCase().includes('centre') || 
-            k.toLowerCase().includes('center') || 
-            k.toLowerCase().includes('dept')
-          ) || keys[2];
+            k.toLowerCase().includes('cost') && k.toLowerCase().includes('centre')
+          ) || keys.find(k => k.toLowerCase().includes('cost'));
+          
+          // Find department name column
+          const deptKey = keys.find(k => 
+            (k.toLowerCase().includes('dept') && k.toLowerCase().includes('name')) ||
+            (k.toLowerCase().includes('department') && !k.toLowerCase().includes('cost'))
+          );
           
           // Find date column
           const dateKey = keys.find(k => 
@@ -55,7 +63,9 @@ const FileUpload = ({ onUpload, darkMode }) => {
           return {
             name: row[nameKey] || '',
             employeeId: row[idKey] || '',
+            email: row[emailKey] || '',
             costCentre: row[costKey] || 'Unknown',
+            departmentName: row[deptKey] || '',
             date: row[dateKey] || '',
             hours: parseFloat(row[hoursKey]) || 0
           };
@@ -178,7 +188,7 @@ const FileUpload = ({ onUpload, darkMode }) => {
       </div>
       
       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-        Expected columns: Employee Name, Employee ID, Cost Centre, Training Date, Training Hours
+        Expected columns: Employee Name, Employee ID, Email, Cost Centre, Department Name, Training Date, Training Hours
       </p>
     </div>
   );

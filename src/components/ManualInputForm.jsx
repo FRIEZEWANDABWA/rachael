@@ -5,6 +5,7 @@ const ManualInputForm = ({ onSubmit, darkMode, employeeDatabase }) => {
     name: '',
     employeeId: '',
     costCentre: '',
+    departmentName: '',
     date: '',
     hours: '',
     email: ''
@@ -21,7 +22,7 @@ const ManualInputForm = ({ onSubmit, darkMode, employeeDatabase }) => {
       ...formData,
       hours: parseFloat(formData.hours)
     });
-    setFormData({ name: '', employeeId: '', costCentre: '', date: '', hours: '', email: '' });
+    setFormData({ name: '', employeeId: '', costCentre: '', departmentName: '', date: '', hours: '', email: '' });
     setSuggestions([]);
   };
 
@@ -33,18 +34,25 @@ const ManualInputForm = ({ onSubmit, darkMode, employeeDatabase }) => {
       [name]: value
     }));
     
-    // Auto-complete logic
+    // Auto-complete logic for Employee ID
     if (name === 'employeeId' && value.length > 0) {
       const matches = Object.values(employeeDatabase).filter(emp => 
         emp.employeeId.toLowerCase().includes(value.toLowerCase()) ||
         emp.name.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(matches.slice(0, 5));
+    } 
+    // Auto-complete logic for Email
+    else if (name === 'email' && value.length > 0) {
+      const matches = Object.values(employeeDatabase).filter(emp => 
+        emp.email && emp.email.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(matches.slice(0, 5));
     } else {
       setSuggestions([]);
     }
     
-    // Auto-fill if exact match found
+    // Auto-fill if exact match found by Employee ID
     if (name === 'employeeId') {
       const exactMatch = employeeDatabase[value.toLowerCase()];
       if (exactMatch) {
@@ -52,7 +60,25 @@ const ManualInputForm = ({ onSubmit, darkMode, employeeDatabase }) => {
           ...prev,
           name: exactMatch.name,
           costCentre: exactMatch.costCentre,
+          departmentName: exactMatch.departmentName,
           email: exactMatch.email
+        }));
+        setSuggestions([]);
+      }
+    }
+    
+    // Auto-fill if exact match found by Email
+    if (name === 'email') {
+      const emailMatch = Object.values(employeeDatabase).find(emp => 
+        emp.email && emp.email.toLowerCase() === value.toLowerCase()
+      );
+      if (emailMatch) {
+        setFormData(prev => ({
+          ...prev,
+          name: emailMatch.name,
+          employeeId: emailMatch.employeeId,
+          costCentre: emailMatch.costCentre,
+          departmentName: emailMatch.departmentName
         }));
         setSuggestions([]);
       }
@@ -65,6 +91,7 @@ const ManualInputForm = ({ onSubmit, darkMode, employeeDatabase }) => {
       name: employee.name,
       employeeId: employee.employeeId,
       costCentre: employee.costCentre,
+      departmentName: employee.departmentName,
       email: employee.email
     }));
     setSuggestions([]);
@@ -86,46 +113,61 @@ const ManualInputForm = ({ onSubmit, darkMode, employeeDatabase }) => {
           required
         />
         
-        <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <input
+              type="email"
+              name="email"
+              placeholder="📧 Email (type to auto-fill employee data)"
+              value={formData.email}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'}`}
+            />
+            {suggestions.length > 0 && (
+              <div className={`absolute z-10 w-full mt-1 rounded border shadow-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
+                {suggestions.map((emp, index) => (
+                  <div
+                    key={index}
+                    onClick={() => selectSuggestion(emp)}
+                    className={`px-3 py-2 cursor-pointer hover:${darkMode ? 'bg-gray-600' : 'bg-gray-100'}`}
+                  >
+                    <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{emp.name}</div>
+                    <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{emp.email} • {emp.costCentre}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <div className="relative">
+            <input
+              type="text"
+              name="employeeId"
+              placeholder="🆔 Employee ID"
+              value={formData.employeeId}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'}`}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
             type="text"
-            name="employeeId"
-            placeholder="Employee ID (start typing for suggestions)"
-            value={formData.employeeId}
+            name="costCentre"
+            placeholder="🏢 Cost Centre Code"
+            value={formData.costCentre}
             onChange={handleChange}
             className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'}`}
           />
-          {suggestions.length > 0 && (
-            <div className={`absolute z-10 w-full mt-1 rounded border shadow-lg ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}>
-              {suggestions.map((emp, index) => (
-                <div
-                  key={index}
-                  onClick={() => selectSuggestion(emp)}
-                  className={`px-3 py-2 cursor-pointer hover:${darkMode ? 'bg-gray-600' : 'bg-gray-100'}`}
-                >
-                  <div className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>{emp.name}</div>
-                  <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{emp.employeeId} • {emp.costCentre}</div>
-                </div>
-              ))}
-            </div>
-          )}
+          <input
+            type="text"
+            name="departmentName"
+            placeholder="🏛️ Department Name"
+            value={formData.departmentName}
+            onChange={handleChange}
+            className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'}`}
+          />
         </div>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email (optional)"
-          value={formData.email}
-          onChange={handleChange}
-          className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'}`}
-        />
-        <input
-          type="text"
-          name="costCentre"
-          placeholder="Cost Centre"
-          value={formData.costCentre}
-          onChange={handleChange}
-          className={`w-full px-3 py-2 rounded border ${darkMode ? 'bg-gray-700 text-white border-gray-600' : 'bg-white border-gray-300'}`}
-        />
         <input
           type="date"
           name="date"
