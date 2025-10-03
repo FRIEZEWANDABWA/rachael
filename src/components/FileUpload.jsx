@@ -15,15 +15,61 @@ const FileUpload = ({ onUpload, darkMode }) => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        const employees = jsonData.map(row => ({
-          name: row['Employee Name'] || row.name || '',
-          employeeId: row['Employee ID'] || row.employeeId || '',
-          costCentre: row['Cost Centre'] || row.costCentre || '',
-          date: row['Training Date'] || row.date || '',
-          hours: parseFloat(row['Training Hours'] || row.hours || 0)
-        })).filter(emp => emp.name && emp.hours > 0);
+        // More flexible column mapping
+        const employees = jsonData.map(row => {
+          const keys = Object.keys(row);
+          
+          // Find name column
+          const nameKey = keys.find(k => 
+            k.toLowerCase().includes('name') || 
+            k.toLowerCase().includes('employee')
+          ) || keys[0];
+          
+          // Find ID column
+          const idKey = keys.find(k => 
+            k.toLowerCase().includes('id') || 
+            k.toLowerCase().includes('emp')
+          ) || keys[1];
+          
+          // Find cost centre column
+          const costKey = keys.find(k => 
+            k.toLowerCase().includes('cost') || 
+            k.toLowerCase().includes('centre') || 
+            k.toLowerCase().includes('center') || 
+            k.toLowerCase().includes('dept')
+          ) || keys[2];
+          
+          // Find date column
+          const dateKey = keys.find(k => 
+            k.toLowerCase().includes('date') || 
+            k.toLowerCase().includes('training')
+          ) || keys[3];
+          
+          // Find hours column
+          const hoursKey = keys.find(k => 
+            k.toLowerCase().includes('hour') || 
+            k.toLowerCase().includes('time') || 
+            k.toLowerCase().includes('training')
+          ) || keys[4];
+          
+          return {
+            name: row[nameKey] || '',
+            employeeId: row[idKey] || '',
+            costCentre: row[costKey] || 'Unknown',
+            date: row[dateKey] || '',
+            hours: parseFloat(row[hoursKey]) || 0
+          };
+        }).filter(emp => emp.name && emp.hours > 0);
+        
+        console.log('Processed employees:', employees);
+        
+        if (employees.length === 0) {
+          alert(`No valid data found. Available columns: ${Object.keys(jsonData[0] || {}).join(', ')}`);
+          return;
+        }
 
         onUpload(employees);
+        alert(`Successfully imported ${employees.length} employee records!`);
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (error) {
         alert('Error reading file. Please check the format.');
