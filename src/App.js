@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import FileUpload from './components/FileUpload';
 import ManualInputForm from './components/ManualInputForm';
 import EmployeeTable from './components/EmployeeTable';
@@ -11,6 +11,29 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [dateFilter, setDateFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [employeeDatabase, setEmployeeDatabase] = useState({});
+
+  // Load data from localStorage on startup
+  useEffect(() => {
+    const savedEmployees = localStorage.getItem('hrTrainingData');
+    const savedDatabase = localStorage.getItem('hrEmployeeDatabase');
+    
+    if (savedEmployees) {
+      setEmployees(JSON.parse(savedEmployees));
+    }
+    if (savedDatabase) {
+      setEmployeeDatabase(JSON.parse(savedDatabase));
+    }
+  }, []);
+
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('hrTrainingData', JSON.stringify(employees));
+  }, [employees]);
+
+  useEffect(() => {
+    localStorage.setItem('hrEmployeeDatabase', JSON.stringify(employeeDatabase));
+  }, [employeeDatabase]);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
@@ -35,7 +58,23 @@ function App() {
 
   const addEmployee = (employee) => {
     const daysLost = employee.hours / 8;
-    setEmployees(prev => [...prev, { ...employee, daysLost, id: Date.now() }]);
+    const newEmployee = { ...employee, daysLost, id: Date.now() };
+    
+    // Add to employees list
+    setEmployees(prev => [...prev, newEmployee]);
+    
+    // Update employee database for auto-complete
+    if (employee.name && employee.employeeId) {
+      setEmployeeDatabase(prev => ({
+        ...prev,
+        [employee.employeeId.toLowerCase()]: {
+          name: employee.name,
+          employeeId: employee.employeeId,
+          costCentre: employee.costCentre,
+          email: employee.email || ''
+        }
+      }));
+    }
   };
 
   const addEmployees = (employeeList) => {
@@ -44,7 +83,22 @@ function App() {
       daysLost: emp.hours / 8,
       id: Date.now() + Math.random()
     }));
+    
     setEmployees(prev => [...prev, ...processedEmployees]);
+    
+    // Update employee database from bulk upload
+    const newDatabase = { ...employeeDatabase };
+    employeeList.forEach(emp => {
+      if (emp.name && emp.employeeId) {
+        newDatabase[emp.employeeId.toLowerCase()] = {
+          name: emp.name,
+          employeeId: emp.employeeId,
+          costCentre: emp.costCentre,
+          email: emp.email || ''
+        };
+      }
+    });
+    setEmployeeDatabase(newDatabase);
   };
 
   return (
@@ -64,7 +118,11 @@ function App() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <FileUpload onUpload={addEmployees} darkMode={darkMode} />
-          <ManualInputForm onSubmit={addEmployee} darkMode={darkMode} />
+          <ManualInputForm 
+            onSubmit={addEmployee} 
+            darkMode={darkMode} 
+            employeeDatabase={employeeDatabase}
+          />
         </div>
 
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -84,6 +142,17 @@ function App() {
           <div className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-800 text-white' : 'bg-white'} border`}>
             Total Days Lost: <span className="font-bold text-red-600">{totalDaysLost.toFixed(2)}</span>
           </div>
+          <button
+            onClick={() => {
+              localStorage.removeItem('hrTrainingData');
+              localStorage.removeItem('hrEmployeeDatabase');
+              setEmployees([]);
+              setEmployeeDatabase({});
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            🗑️ Clear All Data
+          </button>
         </div>
 
         {employees.length > 0 && (
