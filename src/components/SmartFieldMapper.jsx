@@ -94,7 +94,7 @@ const SmartFieldMapper = ({ excelData, onMappingComplete, onCancel, darkMode }) 
   // Auto-map on component mount
   React.useEffect(() => {
     handleAutoMap();
-  }, []);
+  }, [handleAutoMap]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
