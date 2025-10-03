@@ -5,6 +5,7 @@ import EmployeeTable from './components/EmployeeTable';
 import CostCentreSummary from './components/CostCentreSummary';
 import Charts from './components/Charts';
 import ExportButtons from './components/ExportButtons';
+import ExecutiveDashboard from './components/ExecutiveDashboard';
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -120,24 +121,54 @@ function App() {
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            HR Training Time Tracker
-          </h1>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">🎯</div>
+            <div>
+              <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                HR Training Analytics
+              </h1>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Professional Training Time Tracker & Analytics Platform
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className={`px-3 py-1 rounded-full text-xs font-medium ${darkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800'}`}>
+              ✨ Enterprise Ready
+            </div>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            >
+              {darkMode ? '☀️ Light' : '🌙 Dark'}
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <FileUpload onUpload={addEmployees} darkMode={darkMode} />
-          <ManualInputForm 
-            onSubmit={addEmployee} 
-            darkMode={darkMode} 
-            employeeDatabase={employeeDatabase}
-          />
+        <ExecutiveDashboard 
+          employees={filteredEmployees} 
+          costCentreSummary={costCentreSummary} 
+          darkMode={darkMode} 
+        />
+
+        <div className="mt-8">
+          <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-blue-50'} mb-6`}>
+            <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+              📁 Data Input Center
+            </h2>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Upload Excel files or manually add training records to generate insights
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <FileUpload onUpload={addEmployees} darkMode={darkMode} />
+            <ManualInputForm 
+              onSubmit={addEmployee} 
+              darkMode={darkMode} 
+              employeeDatabase={employeeDatabase}
+            />
+          </div>
         </div>
 
         <div className="mb-6 flex flex-col sm:flex-row gap-4">
@@ -172,6 +203,15 @@ function App() {
 
         {employees.length > 0 && (
           <>
+            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} mb-6 mt-8`}>
+              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                📈 Detailed Analytics & Reports
+              </h2>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Comprehensive data tables, visualizations, and export options
+              </p>
+            </div>
+            
             <ExportButtons 
               employees={filteredEmployees} 
               costCentreSummary={costCentreSummary}
@@ -183,6 +223,15 @@ function App() {
               <CostCentreSummary summary={costCentreSummary} darkMode={darkMode} />
             </div>
 
+            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-purple-50'} mb-6`}>
+              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                📊 Visual Analytics
+              </h2>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Interactive charts showing training impact across departments
+              </p>
+            </div>
+            
             <Charts 
               data={costCentreSummary.map(item => ({
                 centre: item.costCentre,
