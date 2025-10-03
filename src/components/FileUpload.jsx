@@ -1,9 +1,12 @@
 import React, { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
+import SmartFieldMapper from './SmartFieldMapper';
 
 const FileUpload = ({ onUpload, darkMode }) => {
   const fileInputRef = useRef();
   const [isDragging, setIsDragging] = useState(false);
+  const [showMapper, setShowMapper] = useState(false);
+  const [excelData, setExcelData] = useState([]);
 
   const processFile = (file) => {
     const reader = new FileReader();
@@ -15,75 +18,43 @@ const FileUpload = ({ onUpload, darkMode }) => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // Store original column names for adaptive display
+        // Check if we have complex data that needs mapping
         const originalColumns = Object.keys(jsonData[0] || {});
         
-        // Smart column detection - preserve original names
-        const columnMapping = {};
-        originalColumns.forEach(col => {
-          const lowerCol = col.toLowerCase();
-          
-          // Detect column types while preserving original names
-          if (lowerCol.includes('name') && !lowerCol.includes('dept')) {
-            columnMapping.name = col;
-          } else if (lowerCol.includes('id') || lowerCol.includes('emp')) {
-            columnMapping.employeeId = col;
-          } else if (lowerCol.includes('email') || lowerCol.includes('mail')) {
-            columnMapping.email = col;
-          } else if (lowerCol.includes('cost') || lowerCol.includes('centre') || lowerCol.includes('center')) {
-            columnMapping.costCentre = col;
-          } else if (lowerCol.includes('dept') || lowerCol.includes('department')) {
-            columnMapping.departmentName = col;
-          } else if (lowerCol.includes('date')) {
-            columnMapping.date = col;
-          } else if (lowerCol.includes('hour') || lowerCol.includes('time')) {
-            columnMapping.hours = col;
-          }
-        });
-        
-        // Use first column as name if no name column found
-        if (!columnMapping.name && originalColumns.length > 0) {
-          columnMapping.name = originalColumns[0];
-        }
-        
-        // Process data using detected columns
-        const employees = jsonData.map((row, index) => {
-          const processedRow = {
-            id: Date.now() + index,
-            originalData: { ...row }, // Keep original Excel data
-            columnMapping: columnMapping // Store column mapping
-          };
-          
-          // Map detected columns to standard fields
-          if (columnMapping.name) processedRow.name = row[columnMapping.name] || '';
-          if (columnMapping.employeeId) processedRow.employeeId = row[columnMapping.employeeId] || '';
-          if (columnMapping.email) processedRow.email = row[columnMapping.email] || '';
-          if (columnMapping.costCentre) processedRow.costCentre = row[columnMapping.costCentre] || '';
-          if (columnMapping.departmentName) processedRow.departmentName = row[columnMapping.departmentName] || '';
-          if (columnMapping.date) processedRow.date = row[columnMapping.date] || '';
-          if (columnMapping.hours) processedRow.hours = parseFloat(row[columnMapping.hours]) || 0;
-          
-          // Calculate days lost
-          processedRow.daysLost = processedRow.hours / 8;
-          
-          return processedRow;
-        }).filter(emp => emp.name && emp.hours > 0);
-        
-        // Store column info globally for table display
-        window.excelColumnMapping = columnMapping;
-        
-        console.log('Processed employees:', employees);
-        
-        if (employees.length === 0) {
-          alert(`No valid data found. Available columns: ${originalColumns.join(', ')}\n\nDetected: ${Object.entries(columnMapping).map(([key, col]) => `${key}: ${col}`).join(', ')}`);
+        if (originalColumns.length > 10 || !originalColumns.some(col => col.toLowerCase().includes('name'))) {
+          // Show smart mapper for complex files
+          setExcelData(jsonData);
+          setShowMapper(true);
           return;
         }
         
-        console.log('Column Mapping:', columnMapping);
-        console.log('Original Columns:', originalColumns);
-
+        // Quick processing for simple files
+        const employees = jsonData.map((row, index) => {
+          const nameCol = originalColumns.find(col => col.toLowerCase().includes('name')) || originalColumns[0];
+          const hoursCol = originalColumns.find(col => col.toLowerCase().includes('hour') || col.toLowerCase().includes('time'));
+          
+          return {
+            id: Date.now() + index,
+            name: row[nameCol] || '',
+            hours: parseFloat(row[hoursCol]) || 0,
+            employeeId: row[originalColumns.find(col => col.toLowerCase().includes('id'))] || '',
+            email: row[originalColumns.find(col => col.toLowerCase().includes('email'))] || '',
+            costCentre: row[originalColumns.find(col => col.toLowerCase().includes('cost'))] || 'Unknown',
+            departmentName: row[originalColumns.find(col => col.toLowerCase().includes('dept'))] || '',
+            date: row[originalColumns.find(col => col.toLowerCase().includes('date'))] || '',
+            daysLost: (parseFloat(row[hoursCol]) || 0) / 8,
+            originalData: row
+          };
+        }).filter(emp => emp.name && emp.hours > 0);
+        
+        if (employees.length === 0) {
+          setExcelData(jsonData);
+          setShowMapper(true);
+          return;
+        }
+        
         onUpload(employees);
-        alert(`Successfully imported ${employees.length} employee records!`);
+        alert(`✅ Quick import: ${employees.length} records processed!`);
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (error) {
         alert('Error reading file. Please check the format.');
@@ -193,12 +164,29 @@ const FileUpload = ({ onUpload, darkMode }) => {
       
       <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
         <p className="mb-2">
-          🤖 <strong>Smart Detection:</strong> System automatically detects and uses YOUR Excel column names
+          🤖 <strong>Smart Processing:</strong> Handles any Excel structure automatically
         </p>
         <p className="text-xs">
-          Looks for: Name, ID, Email, Cost/Centre, Department, Date, Hours (any variation)
+          • Simple files: Instant processing • Complex files: Smart field mapper • Any column names supported
         </p>
       </div>
+      
+      {showMapper && (
+        <SmartFieldMapper
+          excelData={excelData}
+          onMappingComplete={(processedData) => {
+            setShowMapper(false);
+            setExcelData([]);
+            onUpload(processedData);
+            alert(`✨ Smart mapping complete: ${processedData.length} records processed!`);
+          }}
+          onCancel={() => {
+            setShowMapper(false);
+            setExcelData([]);
+          }}
+          darkMode={darkMode}
+        />
+      )}
     </div>
   );
 };
