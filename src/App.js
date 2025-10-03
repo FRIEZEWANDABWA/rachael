@@ -95,9 +95,7 @@ function App() {
     return Object.values(summary).sort((a, b) => b.totalDays - a.totalDays);
   }, [filteredEmployees]);
 
-  const totalDaysLost = useMemo(() => {
-    return filteredEmployees.reduce((sum, emp) => sum + emp.daysLost, 0);
-  }, [filteredEmployees]);
+
 
   const addEmployee = (employee) => {
     const daysLost = employee.hours / 8;
