@@ -6,6 +6,7 @@ import CostCentreSummary from './components/CostCentreSummary';
 import Charts from './components/Charts';
 import ExportButtons from './components/ExportButtons';
 import ExecutiveDashboard from './components/ExecutiveDashboard';
+import LoginScreen from './components/LoginScreen';
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -13,6 +14,34 @@ function App() {
   const [dateFilter, setDateFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeDatabase, setEmployeeDatabase] = useState({});
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update time every minute
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Check for saved authentication
+  useEffect(() => {
+    const savedAuth = localStorage.getItem('rachelHRAuth');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (success) => {
+    if (success) {
+      setIsAuthenticated(true);
+      localStorage.setItem('rachelHRAuth', 'true');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('rachelHRAuth');
+  };
 
   // Load data from localStorage on startup
   useEffect(() => {
@@ -117,30 +146,43 @@ function App() {
     setEmployeeDatabase(newDatabase);
   };
 
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} darkMode={darkMode} />;
+  }
+
   return (
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div className="flex items-center gap-4">
-            <div className="text-4xl">🎯</div>
+            <div className="text-4xl">👩💼</div>
             <div>
               <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                HR Training Analytics
+                Rachel's HR Analytics Hub
               </h1>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Professional Training Time Tracker & Analytics Platform
+                Your Personal Training Management & Analytics Platform
+              </p>
+              <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
+                Welcome back, Rachel! • {currentTime.toLocaleString()}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${darkMode ? 'bg-green-900 text-green-300' : 'bg-green-100 text-green-800'}`}>
-              ✨ Enterprise Ready
+            <div className={`px-3 py-1 rounded-full text-xs font-medium ${darkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-800'}`}>
+              👑 Rachel's Dashboard
             </div>
             <button
               onClick={() => setDarkMode(!darkMode)}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
             >
-              {darkMode ? '☀️ Light' : '🌙 Dark'}
+              {darkMode ? '☀️' : '🌙'}
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm"
+            >
+              🚪 Logout
             </button>
           </div>
         </div>
@@ -185,19 +227,21 @@ function App() {
             onChange={(e) => setDateFilter(e.target.value)}
             className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white border-gray-300'}`}
           />
-          <div className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-gray-800 text-white' : 'bg-white'} border`}>
-            Total Days Lost: <span className="font-bold text-red-600">{totalDaysLost.toFixed(2)}</span>
+          <div className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-800'} text-sm`}>
+            👋 Hi Rachel! You have {employees.length} training records
           </div>
           <button
             onClick={() => {
-              localStorage.removeItem('hrTrainingData');
-              localStorage.removeItem('hrEmployeeDatabase');
-              setEmployees([]);
-              setEmployeeDatabase({});
+              if (window.confirm('Rachel, are you sure you want to clear all your training data?')) {
+                localStorage.removeItem('hrTrainingData');
+                localStorage.removeItem('hrEmployeeDatabase');
+                setEmployees([]);
+                setEmployeeDatabase({});
+              }
             }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
           >
-            🗑️ Clear All Data
+            🗑️ Clear Data
           </button>
         </div>
 
