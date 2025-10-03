@@ -21,20 +21,7 @@ const QuickActions = ({ employees, employeeDatabase, onBulkUpdate, darkMode }) =
     });
   }, [employees, searchTerm, selectedDepartment]);
 
-  const employeeHistory = useMemo(() => {
-    const history = {};
-    employees.forEach(emp => {
-      const key = emp.employeeId || emp.email || emp.name;
-      if (!history[key]) {
-        history[key] = {
-          employee: emp,
-          trainings: []
-        };
-      }
-      history[key].trainings.push(emp);
-    });
-    return history;
-  }, [employees]);
+
 
   const handleBulkAction = () => {
     if (!bulkAction || selectedEmployees.length === 0) {
