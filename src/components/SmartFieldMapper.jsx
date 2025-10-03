@@ -56,7 +56,7 @@ const SmartFieldMapper = ({ excelData, onMappingComplete, onCancel, darkMode }) 
     });
     
     setFieldMapping(autoMapping);
-  }, [excelColumns, requiredFields]);
+  }, [excelColumns]);
 
   const handleProcessData = () => {
     setIsProcessing(true);
