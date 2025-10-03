@@ -10,6 +10,7 @@ import LoginScreen from './components/LoginScreen';
 import Navigation from './components/Navigation';
 import TrainingCalendar from './components/TrainingCalendar';
 import ComplianceTracker from './components/ComplianceTracker';
+import CostAnalysisDashboard from './components/CostAnalysisDashboard';
 import QuickActions from './components/QuickActions';
 
 function App() {
@@ -215,6 +216,13 @@ function App() {
 
         {currentPage === 'compliance' && (
           <ComplianceTracker 
+            employees={employees}
+            darkMode={darkMode}
+          />
+        )}
+
+        {currentPage === 'cost-analysis' && (
+          <CostAnalysisDashboard 
             employees={employees}
             darkMode={darkMode}
           />

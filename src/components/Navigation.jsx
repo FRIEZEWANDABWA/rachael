@@ -5,6 +5,7 @@ const Navigation = ({ currentPage, setCurrentPage, darkMode, employeeCount }) =>
     { id: 'dashboard', name: 'Dashboard', icon: '📊', description: 'Overview & Analytics' },
     { id: 'calendar', name: 'Training Calendar', icon: '📅', description: 'Schedule & Reminders' },
     { id: 'compliance', name: 'Compliance Tracker', icon: '🎯', description: 'Required vs Completed' },
+    { id: 'cost-analysis', name: 'Cost Analysis', icon: '💰', description: 'ROI & Budget Planning' },
     { id: 'quick-actions', name: 'Quick Actions', icon: '⚡', description: 'Bulk Operations & Lookup' }
   ];
 
