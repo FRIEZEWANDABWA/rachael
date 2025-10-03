@@ -7,6 +7,10 @@ import Charts from './components/Charts';
 import ExportButtons from './components/ExportButtons';
 import ExecutiveDashboard from './components/ExecutiveDashboard';
 import LoginScreen from './components/LoginScreen';
+import Navigation from './components/Navigation';
+import TrainingCalendar from './components/TrainingCalendar';
+import ComplianceTracker from './components/ComplianceTracker';
+import QuickActions from './components/QuickActions';
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -16,6 +20,7 @@ function App() {
   const [employeeDatabase, setEmployeeDatabase] = useState({});
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
   // Update time every minute
   useEffect(() => {
@@ -185,65 +190,102 @@ function App() {
           </div>
         </div>
 
-        <ExecutiveDashboard 
-          employees={filteredEmployees} 
-          costCentreSummary={costCentreSummary} 
-          darkMode={darkMode} 
+        <Navigation 
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          darkMode={darkMode}
+          employeeCount={employees.length}
         />
 
-        <div className="mt-8">
-          <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-blue-50'} mb-6`}>
-            <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
-              📁 Data Input Center
-            </h2>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Upload Excel files or manually add training records to generate insights
-            </p>
+        {currentPage === 'dashboard' && (
+          <ExecutiveDashboard 
+            employees={filteredEmployees} 
+            costCentreSummary={costCentreSummary} 
+            darkMode={darkMode} 
+          />
+        )}
+
+        {currentPage === 'calendar' && (
+          <TrainingCalendar 
+            employees={employees}
+            onAddTraining={addEmployee}
+            darkMode={darkMode}
+          />
+        )}
+
+        {currentPage === 'compliance' && (
+          <ComplianceTracker 
+            employees={employees}
+            darkMode={darkMode}
+          />
+        )}
+
+        {currentPage === 'quick-actions' && (
+          <QuickActions 
+            employees={employees}
+            employeeDatabase={employeeDatabase}
+            onBulkUpdate={() => {}}
+            darkMode={darkMode}
+          />
+        )}
+
+        {currentPage === 'dashboard' && (
+          <div className="mt-8">
+            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-blue-50'} mb-6`}>
+              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
+                📁 Data Input Center
+              </h2>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Upload Excel files or manually add training records to generate insights
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <FileUpload onUpload={addEmployees} darkMode={darkMode} />
+              <ManualInputForm 
+                onSubmit={addEmployee} 
+                darkMode={darkMode} 
+                employeeDatabase={employeeDatabase}
+              />
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <FileUpload onUpload={addEmployees} darkMode={darkMode} />
-            <ManualInputForm 
-              onSubmit={addEmployee} 
-              darkMode={darkMode} 
-              employeeDatabase={employeeDatabase}
+        )}
+
+        {currentPage === 'dashboard' && (
+          <div className="mb-6 flex flex-col sm:flex-row gap-4">
+            <input
+              type="text"
+              placeholder="🔍 Search by name, email, ID, cost centre, or department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white border-gray-300'}`}
             />
+            <input
+              type="month"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white border-gray-300'}`}
+            />
+            <div className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-800'} text-sm`}>
+              👋 Hi Rachel! You have {employees.length} training records
+            </div>
+            <button
+              onClick={() => {
+                if (window.confirm('Rachel, are you sure you want to clear all your training data?')) {
+                  localStorage.removeItem('hrTrainingData');
+                  localStorage.removeItem('hrEmployeeDatabase');
+                  setEmployees([]);
+                  setEmployeeDatabase({});
+                }
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
+            >
+              🗑️ Clear Data
+            </button>
           </div>
-        </div>
+        )}
 
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="🔍 Search by name, email, ID, cost centre, or department..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white border-gray-300'}`}
-          />
-          <input
-            type="month"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className={`px-4 py-2 rounded-lg border ${darkMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white border-gray-300'}`}
-          />
-          <div className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-800'} text-sm`}>
-            👋 Hi Rachel! You have {employees.length} training records
-          </div>
-          <button
-            onClick={() => {
-              if (window.confirm('Rachel, are you sure you want to clear all your training data?')) {
-                localStorage.removeItem('hrTrainingData');
-                localStorage.removeItem('hrEmployeeDatabase');
-                setEmployees([]);
-                setEmployeeDatabase({});
-              }
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
-          >
-            🗑️ Clear Data
-          </button>
-        </div>
-
-        {employees.length > 0 && (
+        {currentPage === 'dashboard' && employees.length > 0 && (
           <>
             <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-50'} mb-6 mt-8`}>
               <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'} mb-2`}>
