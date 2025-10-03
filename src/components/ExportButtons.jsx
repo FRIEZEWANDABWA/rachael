@@ -4,66 +4,145 @@ import 'jspdf-autotable';
 
 const ExportButtons = ({ employees, costCentreSummary, darkMode }) => {
   const exportToCSV = () => {
+    if (!employees || employees.length === 0) {
+      alert('No data to export. Please add employees first.');
+      return;
+    }
+
+    // Get column mapping from first employee
+    const columnMapping = employees[0].columnMapping || {
+      name: 'Name',
+      employeeId: 'Employee ID',
+      email: 'Email',
+      costCentre: 'Cost Centre',
+      departmentName: 'Department',
+      date: 'Date',
+      hours: 'Hours'
+    };
+
+    // Create dynamic headers based on available data
+    const headers = [];
+    const dataKeys = [];
+    
+    if (columnMapping.name) { headers.push(columnMapping.name); dataKeys.push('name'); }
+    if (columnMapping.employeeId) { headers.push(columnMapping.employeeId); dataKeys.push('employeeId'); }
+    if (columnMapping.email && employees.some(emp => emp.email)) { headers.push(columnMapping.email); dataKeys.push('email'); }
+    if (columnMapping.costCentre) { headers.push(columnMapping.costCentre); dataKeys.push('costCentre'); }
+    if (columnMapping.departmentName && employees.some(emp => emp.departmentName)) { headers.push(columnMapping.departmentName); dataKeys.push('departmentName'); }
+    if (columnMapping.date && employees.some(emp => emp.date)) { headers.push(columnMapping.date); dataKeys.push('date'); }
+    if (columnMapping.hours) { headers.push(columnMapping.hours); dataKeys.push('hours'); }
+    headers.push('Days Lost');
+    dataKeys.push('daysLost');
+
+    // Employee data
     const employeeCSV = [
-      ['Employee Name', 'Employee ID', 'Cost Centre', 'Training Date', 'Training Hours', 'Days Lost'],
-      ...employees.map(emp => [emp.name, emp.employeeId, emp.costCentre, emp.date, emp.hours, emp.daysLost.toFixed(2)])
+      headers,
+      ...employees.map(emp => dataKeys.map(key => {
+        if (key === 'daysLost') return emp[key].toFixed(2);
+        return emp[key] || '';
+      }))
     ];
 
+    // Department summary
     const costCentreCSV = [
-      ['Cost Centre', 'Total Days Lost'],
-      ...costCentreSummary.map(item => [item.centre, item.days.toFixed(2)])
+      ['Cost Centre', 'Department Name', 'Employee Count', 'Total Days Lost', 'Avg per Employee'],
+      ...costCentreSummary.map(item => [
+        item.costCentre,
+        item.departmentName,
+        item.employeeCount,
+        item.totalDays.toFixed(2),
+        (item.totalDays / item.employeeCount).toFixed(1)
+      ])
     ];
 
     const csvContent = [
-      'Employee Training Records',
+      'EMPLOYEE TRAINING RECORDS',
       ...employeeCSV.map(row => row.join(',')),
       '',
-      'Cost Centre Summary',
+      'DEPARTMENT SUMMARY',
       ...costCentreCSV.map(row => row.join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'training-days-report.csv';
+    a.download = `HR-Training-Report-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
 
   const exportToPDF = () => {
+    if (!employees || employees.length === 0) {
+      alert('No data to export. Please add employees first.');
+      return;
+    }
+
     const doc = new jsPDF();
     
-    doc.setFontSize(20);
-    doc.text('HR Training Time Tracker Report', 20, 20);
+    // Header
+    doc.setFontSize(18);
+    doc.setTextColor(40, 40, 40);
+    doc.text('HR Training Time Tracker Report', 20, 25);
     
-    doc.setFontSize(12);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 35);
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 35);
+    doc.text(`Total Employees: ${employees.length} | Total Days Lost: ${employees.reduce((sum, emp) => sum + emp.daysLost, 0).toFixed(2)}`, 20, 42);
 
-    const employeeData = employees.map(emp => [
-      emp.name, emp.employeeId, emp.costCentre, emp.date, emp.hours, emp.daysLost.toFixed(2)
-    ]);
+    // Get column mapping
+    const columnMapping = employees[0].columnMapping || {};
+    
+    // Dynamic headers and data for employee table
+    const headers = [];
+    const dataKeys = [];
+    
+    if (columnMapping.name) { headers.push(columnMapping.name); dataKeys.push('name'); }
+    if (columnMapping.employeeId) { headers.push('ID'); dataKeys.push('employeeId'); }
+    if (columnMapping.costCentre) { headers.push('Cost Centre'); dataKeys.push('costCentre'); }
+    if (columnMapping.departmentName && employees.some(emp => emp.departmentName)) { headers.push('Department'); dataKeys.push('departmentName'); }
+    if (columnMapping.hours) { headers.push('Hours'); dataKeys.push('hours'); }
+    headers.push('Days Lost');
+    dataKeys.push('daysLost');
 
+    const employeeData = employees.map(emp => 
+      dataKeys.map(key => {
+        if (key === 'daysLost') return emp[key].toFixed(2);
+        return emp[key] || '';
+      })
+    );
+
+    // Employee table
     doc.autoTable({
-      head: [['Employee Name', 'Employee ID', 'Cost Centre', 'Training Date', 'Training Hours', 'Days Lost']],
+      head: [headers],
       body: employeeData,
       startY: 50,
-      theme: 'grid'
+      theme: 'striped',
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 8 }
     });
 
-    const costCentreData = costCentreSummary.map(item => [item.centre, item.days.toFixed(2)]);
+    // Department summary
+    const deptData = costCentreSummary.map(item => [
+      item.costCentre,
+      item.departmentName,
+      item.employeeCount.toString(),
+      item.totalDays.toFixed(2),
+      (item.totalDays / item.employeeCount).toFixed(1)
+    ]);
     
     doc.autoTable({
-      head: [['Cost Centre', 'Total Days Lost']],
-      body: costCentreData,
-      startY: doc.lastAutoTable.finalY + 20,
-      theme: 'grid'
+      head: [['Cost Centre', 'Department', 'Employees', 'Days Lost', 'Avg/Employee']],
+      body: deptData,
+      startY: doc.lastAutoTable.finalY + 15,
+      theme: 'striped',
+      headStyles: { fillColor: [231, 76, 60] },
+      styles: { fontSize: 8 }
     });
 
-    const totalDays = employees.reduce((sum, emp) => sum + emp.daysLost, 0);
-    doc.text(`Organization Total Days Lost: ${totalDays.toFixed(2)}`, 20, doc.lastAutoTable.finalY + 20);
-
-    doc.save('training-days-report.pdf');
+    doc.save(`HR-Training-Report-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
