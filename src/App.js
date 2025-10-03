@@ -14,7 +14,7 @@ import QuickActions from './components/QuickActions';
 
 function App() {
   const [employees, setEmployees] = useState([]);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [dateFilter, setDateFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [employeeDatabase, setEmployeeDatabase] = useState({});
