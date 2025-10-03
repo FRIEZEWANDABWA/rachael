@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 
+const requiredFields = [
+  { key: 'name', label: 'Employee Name', required: true, icon: '👤' },
+  { key: 'hours', label: 'Training Hours', required: true, icon: '⏰' },
+  { key: 'employeeId', label: 'Employee ID', required: false, icon: '🆔' },
+  { key: 'email', label: 'Email', required: false, icon: '📧' },
+  { key: 'costCentre', label: 'Cost Centre', required: false, icon: '🏢' },
+  { key: 'departmentName', label: 'Department', required: false, icon: '🏛️' },
+  { key: 'date', label: 'Training Date', required: false, icon: '📅' }
+];
+
 const SmartFieldMapper = ({ excelData, onMappingComplete, onCancel, darkMode }) => {
   const [fieldMapping, setFieldMapping] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
 
   const excelColumns = Object.keys(excelData[0] || {});
-  
-  const requiredFields = [
-    { key: 'name', label: 'Employee Name', required: true, icon: '👤' },
-    { key: 'hours', label: 'Training Hours', required: true, icon: '⏰' },
-    { key: 'employeeId', label: 'Employee ID', required: false, icon: '🆔' },
-    { key: 'email', label: 'Email', required: false, icon: '📧' },
-    { key: 'costCentre', label: 'Cost Centre', required: false, icon: '🏢' },
-    { key: 'departmentName', label: 'Department', required: false, icon: '🏛️' },
-    { key: 'date', label: 'Training Date', required: false, icon: '📅' }
-  ];
 
   const handleAutoMap = React.useCallback(() => {
     const autoMapping = {};
