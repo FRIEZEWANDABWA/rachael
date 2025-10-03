@@ -95,7 +95,7 @@ const FileUpload = ({ onUpload, darkMode }) => {
         <p className={`text-xl mb-2 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
           {isDragging ? '🎯 Drop your file here!' : '📂 Drag & drop your Excel/CSV file'}
         </p>
-        <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>or click anywhere to browse</p>
+        <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>or use the file inputs below</p>
       </div>
       
       <input
@@ -106,17 +106,30 @@ const FileUpload = ({ onUpload, darkMode }) => {
         className="hidden"
       />
       
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className={`px-4 py-2 rounded-lg border transition-colors ${
-          darkMode 
-            ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
-            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-        }`}
-      >
-        📁 Browse Files
-      </button>
+      <div className="flex gap-4 justify-center">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className={`px-4 py-2 rounded-lg border transition-colors ${
+            darkMode 
+              ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          📁 Browse Files
+        </button>
+        
+        <input
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          onChange={handleFileUpload}
+          className={`px-4 py-2 rounded-lg border ${
+            darkMode 
+              ? 'border-gray-600 bg-gray-700 text-gray-300' 
+              : 'border-gray-300 bg-white text-gray-700'
+          }`}
+        />
+      </div>
       
       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
         Expected columns: Employee Name, Employee ID, Cost Centre, Training Date, Training Hours
