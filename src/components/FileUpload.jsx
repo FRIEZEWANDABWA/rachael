@@ -39,42 +39,63 @@ const FileUpload = ({ onUpload, darkMode }) => {
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    setIsDragging(false);
+    e.stopPropagation();
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) processFile(file);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.name.match(/\.(xlsx|xls|csv)$/i)) {
+        processFile(file);
+      } else {
+        alert('Please upload an Excel (.xlsx, .xls) or CSV file');
+      }
+    }
   };
 
   return (
     <div 
-      className={`p-6 rounded-lg border-2 border-dashed transition-colors ${
+      className={`p-6 rounded-lg border-2 border-dashed transition-colors cursor-pointer ${
         isDragging 
           ? (darkMode ? 'border-blue-400 bg-blue-900/20' : 'border-blue-400 bg-blue-50')
-          : (darkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-white')
+          : (darkMode ? 'border-gray-600 bg-gray-800 hover:border-gray-500' : 'border-gray-300 bg-white hover:border-gray-400')
       }`}
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onClick={() => fileInputRef.current?.click()}
     >
       <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
         Upload Excel/CSV File
       </h2>
       
-      <div className="text-center mb-4">
-        <div className={`text-4xl mb-2 ${isDragging ? 'animate-bounce' : ''}`}>📁</div>
-        <p className={`text-lg mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-          {isDragging ? 'Drop your file here!' : 'Drag & drop your file here'}
+      <div className="text-center mb-6">
+        <div className={`text-6xl mb-4 ${isDragging ? 'animate-bounce' : ''}`}>📁</div>
+        <p className={`text-xl mb-2 font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+          {isDragging ? '🎯 Drop your file here!' : '📂 Drag & drop your Excel/CSV file'}
         </p>
-        <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>or</p>
+        <p className={`text-sm mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>or click anywhere to browse</p>
       </div>
       
       <input
@@ -82,8 +103,20 @@ const FileUpload = ({ onUpload, darkMode }) => {
         type="file"
         accept=".xlsx,.xls,.csv"
         onChange={handleFileUpload}
-        className="mb-4 w-full"
+        className="hidden"
       />
+      
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        className={`px-4 py-2 rounded-lg border transition-colors ${
+          darkMode 
+            ? 'border-gray-600 text-gray-300 hover:bg-gray-700' 
+            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        📁 Browse Files
+      </button>
       
       <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
         Expected columns: Employee Name, Employee ID, Cost Centre, Training Date, Training Hours
