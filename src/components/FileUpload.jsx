@@ -15,68 +15,72 @@ const FileUpload = ({ onUpload, darkMode }) => {
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-        // More flexible column mapping
-        const employees = jsonData.map(row => {
-          const keys = Object.keys(row);
+        // Store original column names for adaptive display
+        const originalColumns = Object.keys(jsonData[0] || {});
+        
+        // Smart column detection - preserve original names
+        const columnMapping = {};
+        originalColumns.forEach(col => {
+          const lowerCol = col.toLowerCase();
           
-          // Find name column
-          const nameKey = keys.find(k => 
-            k.toLowerCase().includes('name') && !k.toLowerCase().includes('dept')
-          ) || keys[0];
-          
-          // Find ID column
-          const idKey = keys.find(k => 
-            k.toLowerCase().includes('id') || 
-            k.toLowerCase().includes('emp')
-          ) || keys[1];
-          
-          // Find email column
-          const emailKey = keys.find(k => 
-            k.toLowerCase().includes('email') || 
-            k.toLowerCase().includes('mail')
-          );
-          
-          // Find cost centre column
-          const costKey = keys.find(k => 
-            k.toLowerCase().includes('cost') && k.toLowerCase().includes('centre')
-          ) || keys.find(k => k.toLowerCase().includes('cost'));
-          
-          // Find department name column
-          const deptKey = keys.find(k => 
-            (k.toLowerCase().includes('dept') && k.toLowerCase().includes('name')) ||
-            (k.toLowerCase().includes('department') && !k.toLowerCase().includes('cost'))
-          );
-          
-          // Find date column
-          const dateKey = keys.find(k => 
-            k.toLowerCase().includes('date') || 
-            k.toLowerCase().includes('training')
-          ) || keys[3];
-          
-          // Find hours column
-          const hoursKey = keys.find(k => 
-            k.toLowerCase().includes('hour') || 
-            k.toLowerCase().includes('time') || 
-            k.toLowerCase().includes('training')
-          ) || keys[4];
-          
-          return {
-            name: row[nameKey] || '',
-            employeeId: row[idKey] || '',
-            email: row[emailKey] || '',
-            costCentre: row[costKey] || 'Unknown',
-            departmentName: row[deptKey] || '',
-            date: row[dateKey] || '',
-            hours: parseFloat(row[hoursKey]) || 0
+          // Detect column types while preserving original names
+          if (lowerCol.includes('name') && !lowerCol.includes('dept')) {
+            columnMapping.name = col;
+          } else if (lowerCol.includes('id') || lowerCol.includes('emp')) {
+            columnMapping.employeeId = col;
+          } else if (lowerCol.includes('email') || lowerCol.includes('mail')) {
+            columnMapping.email = col;
+          } else if (lowerCol.includes('cost') || lowerCol.includes('centre') || lowerCol.includes('center')) {
+            columnMapping.costCentre = col;
+          } else if (lowerCol.includes('dept') || lowerCol.includes('department')) {
+            columnMapping.departmentName = col;
+          } else if (lowerCol.includes('date')) {
+            columnMapping.date = col;
+          } else if (lowerCol.includes('hour') || lowerCol.includes('time')) {
+            columnMapping.hours = col;
+          }
+        });
+        
+        // Use first column as name if no name column found
+        if (!columnMapping.name && originalColumns.length > 0) {
+          columnMapping.name = originalColumns[0];
+        }
+        
+        // Process data using detected columns
+        const employees = jsonData.map((row, index) => {
+          const processedRow = {
+            id: Date.now() + index,
+            originalData: { ...row }, // Keep original Excel data
+            columnMapping: columnMapping // Store column mapping
           };
+          
+          // Map detected columns to standard fields
+          if (columnMapping.name) processedRow.name = row[columnMapping.name] || '';
+          if (columnMapping.employeeId) processedRow.employeeId = row[columnMapping.employeeId] || '';
+          if (columnMapping.email) processedRow.email = row[columnMapping.email] || '';
+          if (columnMapping.costCentre) processedRow.costCentre = row[columnMapping.costCentre] || '';
+          if (columnMapping.departmentName) processedRow.departmentName = row[columnMapping.departmentName] || '';
+          if (columnMapping.date) processedRow.date = row[columnMapping.date] || '';
+          if (columnMapping.hours) processedRow.hours = parseFloat(row[columnMapping.hours]) || 0;
+          
+          // Calculate days lost
+          processedRow.daysLost = processedRow.hours / 8;
+          
+          return processedRow;
         }).filter(emp => emp.name && emp.hours > 0);
+        
+        // Store column info globally for table display
+        window.excelColumnMapping = columnMapping;
         
         console.log('Processed employees:', employees);
         
         if (employees.length === 0) {
-          alert(`No valid data found. Available columns: ${Object.keys(jsonData[0] || {}).join(', ')}`);
+          alert(`No valid data found. Available columns: ${originalColumns.join(', ')}\n\nDetected: ${Object.entries(columnMapping).map(([key, col]) => `${key}: ${col}`).join(', ')}`);
           return;
         }
+        
+        console.log('Column Mapping:', columnMapping);
+        console.log('Original Columns:', originalColumns);
 
         onUpload(employees);
         alert(`Successfully imported ${employees.length} employee records!`);
@@ -187,9 +191,14 @@ const FileUpload = ({ onUpload, darkMode }) => {
         />
       </div>
       
-      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-        Expected columns: Employee Name, Employee ID, Email, Cost Centre, Department Name, Training Date, Training Hours
-      </p>
+      <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        <p className="mb-2">
+          🤖 <strong>Smart Detection:</strong> System automatically detects and uses YOUR Excel column names
+        </p>
+        <p className="text-xs">
+          Looks for: Name, ID, Email, Cost/Centre, Department, Date, Hours (any variation)
+        </p>
+      </div>
     </div>
   );
 };
